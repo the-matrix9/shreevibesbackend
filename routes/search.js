@@ -25,19 +25,30 @@ router.get('/', async (req, res) => {
       timeout: 10000,
     });
 
-    const raw = Array.isArray(upstream.data?.data) ? upstream.data.data : [];
+    const raw = Array.isArray(upstream.data?.data?.pins) ? upstream.data.data.pins : [];
 
     // Reshape + strip anything that isn't needed by the UI (upstream key,
-    // tracking params, internal ids) so we never leak upstream internals.
-    const results = raw.map((pin) => ({
-      id: pin.id,
-      title: pin.title || 'Untitled',
-      description: (pin.description || '').trim(),
-      thumb: pin.image_medium_url,
-      large: pin.image_large_url,
-      width: pin.image_large_size_pixels?.width,
-      height: pin.image_large_size_pixels?.height,
-    })).filter((p) => p.thumb && p.large);
+    // author/board internals, tracking params) so we never leak upstream internals.
+    const results = raw
+      .map((pin) => {
+        const imgs = pin.images || {};
+        const thumb = imgs['474x']?.url || imgs['236x']?.url || imgs['170x']?.url;
+        const large = imgs.orig?.url || imgs['736x']?.url || thumb;
+        if (!thumb || !large) return null;
+
+        return {
+          id: pin.id,
+          title: pin.title || pin.description || 'Untitled',
+          description: (pin.description || '').trim(),
+          thumb,
+          large,
+          width: imgs.orig?.width || imgs['736x']?.width,
+          height: imgs.orig?.height || imgs['736x']?.height,
+          author: pin.author?.full_name || pin.author?.username || null,
+          likes: pin.engagement?.reactions ?? null,
+        };
+      })
+      .filter(Boolean);
 
     res.json({ query: q, count: results.length, results });
   } catch (err) {
