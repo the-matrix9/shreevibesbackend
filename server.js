@@ -19,13 +19,15 @@ if (!process.env.JWT_SECRET) {
 if (!process.env.UPSTREAM_BASE || !process.env.UPSTREAM_KEY) {
   console.warn(
     '\n[ShreeVibe] WARNING: UPSTREAM_BASE / UPSTREAM_KEY are not set. ' +
-    'Copy backend/.env.example to backend/.env and fill them in, or /api/search will fail.\n'
+    'Copy backend/.env.example to backend/.env and fill them in, or search will fail ' +
+    '(this breaks both /api/search and the public /api/v1/search).\n'
   );
 }
 
 const verifyRoutes = require('./routes/verify');
 const searchRoutes = require('./routes/search');
 const downloadRoutes = require('./routes/download');
+const publicApiRoutes = require('./routes/public');
 
 const app = express();
 
@@ -37,6 +39,13 @@ app.use(helmet({
 }));
 app.use(express.json({ limit: '10kb' }));
 
+// ---- Public API (/api/v1) ----
+// This is the free, published API — open CORS (any origin/app can call it
+// from the browser or a server) and no session handshake. It carries its
+// own rate limit (see routes/public.js) instead of the site's internal one.
+app.use('/api/v1', cors({ origin: true, methods: ['GET', 'OPTIONS'] }), publicApiRoutes);
+
+// ---- Internal site API (everything below) — locked to our own frontend ----
 const allowedOrigin = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
 app.use(cors({
   origin: allowedOrigin,
@@ -47,9 +56,10 @@ app.use(cors({
 // Block anything that doesn't look like it came from our own frontend fetch code.
 // This is not bulletproof (nothing client-side ever is) but it filters out
 // casual scraping / direct curl attempts and forces attackers to at least
-// replicate our token handshake.
+// replicate our token handshake. The public /api/v1 routes are intentionally
+// exempt — those are meant to be called by anyone, from anywhere.
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api/')) {
+  if (req.path.startsWith('/api/') && !req.path.startsWith('/api/v1/')) {
     const marker = req.get('X-ShreeVibe-Client');
     if (marker !== 'shreevibe-web') {
       return res.status(403).json({ error: 'Forbidden' });
@@ -58,7 +68,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Global rate limit
+// Global rate limit (internal routes only — /api/v1 already returned above)
 app.use(rateLimit({
   windowMs: 60 * 1000,
   max: 60,
