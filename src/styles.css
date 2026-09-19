@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Masonry gallery ---------- */
+.masonry-grid {
+  column-count: 2;
+  column-gap: 16px;
+}
+@media (min-width: 640px) {
+  .masonry-grid { column-count: 2; column-gap: 20px; }
+}
+@media (min-width: 768px) {
+  .masonry-grid { column-count: 3; }
+}
+@media (min-width: 1024px) {
+  .masonry-grid { column-count: 4; }
+}
+@media (min-width: 1280px) {
+  .masonry-grid { column-count: 5; }
+}
+.masonry-item {
+  break-inside: avoid;
+  margin-bottom: 20px;
+}
+
+/* ---------- Utility ---------- */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.elastic-touch-feedback:active { transform: scale(0.94); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Entrance animations ---------- */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.fade-in-up { animation: fadeIn 0.4s ease; }
+
+/* Staggered reveal for gallery cards — each card reads --stagger (index)
+   from an inline style and the delay falls out of that, so the grid feels
+   like it's pouring in rather than popping all at once. */
+.gallery-enter {
+  animation: riseIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--stagger, 0) * 45ms);
+}
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Image shimmer while a thumbnail is loading */
+.img-shimmer {
+  background: linear-gradient(
+    100deg,
+    theme('colors.surface-container') 30%,
+    theme('colors.surface-container-high') 50%,
+    theme('colors.surface-container') 70%
+  );
+  background-size: 400px 100%;
+}
+
+/* ---------- Navbar glass pill ---------- */
+.nav-pill {
+  background: color-mix(in srgb, theme('colors.surface') 78%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, theme('colors.on-background') 6%, transparent) inset,
+    0 12px 30px -12px color-mix(in srgb, theme('colors.on-background') 25%, transparent);
+}
+.dark .nav-pill {
+  background: color-mix(in srgb, theme('colors.night-surface') 72%, transparent);
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, white 6%, transparent) inset,
+    0 12px 30px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* Little dot that marks the active nav item */
+.nav-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* ---------- Navbar show/hide on scroll ---------- */
+.nav-autohide {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+.nav-autohide.nav-hidden {
+  transform: translateY(-140%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- View switch transition ---------- */
+.view-transition {
+  animation: viewIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Skeleton loading ---------- */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    100deg,
+    theme('colors.surface-container') 30%,
+    theme('colors.surface-container-high') 50%,
+    theme('colors.surface-container') 70%
+  );
+  background-size: 400px 100%;
+}
+.dark .skeleton-shimmer {
+  background: linear-gradient(
+    100deg,
+    theme('colors.night-surface') 30%,
+    theme('colors.night-surface-3') 50%,
+    theme('colors.night-surface') 70%
+  );
+  background-size: 400px 100%;
+}
+.skeleton-line {
+  border-radius: 999px;
+  background: theme('colors.surface-container-high');
+}
+.dark .skeleton-line { background: theme('colors.night-surface-3'); }
+
+/* ---------- Background video ---------- */
+.bg-video-layer video {
+  animation: fadeIn 1.2s ease both;
+}
+
+/* ---------- Nicer focus ring ---------- */
+:focus-visible {
+  outline: 2px solid theme('colors.primary');
+  outline-offset: 2px;
+}
+.dark :focus-visible {
+  outline-color: theme('colors.night-primary');
+}
+
+/* ---------- Hero ambient orbs ---------- */
+.ambient-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(60px);
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+.dark .ambient-orb { opacity: 0.25; }
