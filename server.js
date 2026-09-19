@@ -45,10 +45,23 @@ app.use(express.json({ limit: '10kb' }));
 // own rate limit (see routes/public.js) instead of the site's internal one.
 app.use('/api/v1', cors({ origin: true, methods: ['GET', 'OPTIONS'] }), publicApiRoutes);
 
-// ---- Internal site API (everything below) — locked to our own frontend ----
-const allowedOrigin = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
+// ---- Internal site API (everything below) — locked to our own frontend(s) ----
+// FRONTEND_ORIGIN can be a single URL or a comma-separated list, e.g.
+// "https://shreevibes.vercel.app,https://shreevibes.pages.dev". This lets
+// the same backend serve multiple deployed frontends without a code change —
+// just update the env var and redeploy.
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: allowedOrigin,
+  origin(origin, callback) {
+    // No Origin header (server-to-server, curl, health checks) — allow.
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-ShreeVibe-Client'],
 }));
